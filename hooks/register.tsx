@@ -48,9 +48,9 @@ const isOff = async ($: Pick<CoreEngineInterface, 'store'>) => (await $.store.ge
 
 // Shown in the chat once, the first session after install, and again on
 // `/mascot help`: everything a new user needs, with nothing to look up.
-// (1.1.0 marked 'welcomed' without the note reaching the chat: a new key
-// shows it once more to those who installed that version.)
-const WELCOMED_KEY = 'welcomed-2'
+// (1.1.0 and 1.2.0 marked it shown without it reaching a seen chat: a new key
+// shows it once more to those who installed them.)
+const WELCOMED_KEY = 'welcomed-3'
 const HELP = [
   'Clawd mascot is installed: he codes in the side pane while Claude works, and sleeps when Claude is done.',
   'Hide him: /mascot off, or close the pane with its ×. Bring him back: /mascot on. Just /mascot switches.',
@@ -73,6 +73,16 @@ const welcome = async ($: Pick<CoreEngineInterface, 'session' | 'store'>) => {
 const COLUMNS = 36
 const open = ($: Pick<CoreEngineInterface, 'ui'>) => $.ui.open({ id: PANE, title: TITLE, columns: COLUMNS })
 
+// Only in a session a person is looking at: the one where the pane was just
+// placed on a screen. The app's unseen background sessions start the mod too,
+// and 1.2.0 spent the note in one of them.
+const welcomeWhereSeen = async (
+  $: Pick<CoreEngineInterface, 'session' | 'store'>,
+  opened: { isPlaced: boolean } | undefined,
+) => {
+  if (opened?.isPlaced === true) await welcome($)
+}
+
 export const register: Register = on => {
   // On or off is remembered across sessions: `/mascot` flips it, `/mascot on`
   // and `/mascot off` set it, and closing the pane with its X turns it off.
@@ -82,17 +92,16 @@ export const register: Register = on => {
       name: 'mascot',
       description: 'Show or hide the Clawd pane (/mascot on, /mascot off, /mascot help)',
     })
-    if (!(await isOff($))) void open($)
+    const opening = (await isOff($)) ? undefined : open($).catch(() => undefined)
     const ran = await next(e)
-    await welcome($)
+    await welcomeWhereSeen($, await opening)
 
     return ran
   })
 
   on('session.attach', async ($, e, next) => {
     const ran = await next(e)
-    if (!(await isOff($))) void open($)
-    await welcome($)
+    if (!(await isOff($))) await welcomeWhereSeen($, await open($).catch(() => undefined))
 
     return ran
   })
