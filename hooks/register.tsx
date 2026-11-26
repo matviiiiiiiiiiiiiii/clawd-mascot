@@ -48,16 +48,30 @@ const isOff = async ($: Pick<CoreEngineInterface, 'store'>) => (await $.store.ge
 
 // Shown in the chat once, the first session after install, and again on
 // `/mascot help`: everything a new user needs, with nothing to look up.
-const WELCOMED_KEY = 'welcomed'
+// (1.1.0 marked 'welcomed' without the note reaching the chat: a new key
+// shows it once more to those who installed that version.)
+const WELCOMED_KEY = 'welcomed-2'
 const HELP = [
   'Clawd mascot is installed: he codes in the side pane while Claude works, and sleeps when Claude is done.',
   'Hide him: /mascot off, or close the pane with its ×. Bring him back: /mascot on. Just /mascot switches.',
   'Remove the mod: claude plugin uninstall mascot@clawd-mascot in a shell, or remove mascot under Plugins in the desktop app.',
   'See this again any time: /mascot help',
-]
-const showHelp = ($: Pick<CoreEngineInterface, 'ui'>) => {
-  for (const line of HELP) $.ui.log(line)
+].join('\n')
+
+// A notice row in the conversation itself: stored at once, so it is there
+// whenever the chat is drawn, and never read by the model.
+const welcome = async ($: Pick<CoreEngineInterface, 'session' | 'store'>) => {
+  if ((await $.store.get(WELCOMED_KEY)) === true) return
+  const res = await $.session
+    .append({ message: { type: 'system', content: [{ type: 'text', text: HELP }] } })
+    .catch(() => undefined)
+  if (res === undefined || (typeof res === 'object' && res !== null && 'deny' in res)) return
+  await $.store.set(WELCOMED_KEY, true).catch(() => undefined)
 }
+
+// As narrow as the pane gets while Clawd still fits: the drawing is 270 px.
+const COLUMNS = 36
+const open = ($: Pick<CoreEngineInterface, 'ui'>) => $.ui.open({ id: PANE, title: TITLE, columns: COLUMNS })
 
 export const register: Register = on => {
   // On or off is remembered across sessions: `/mascot` flips it, `/mascot on`
@@ -68,18 +82,17 @@ export const register: Register = on => {
       name: 'mascot',
       description: 'Show or hide the Clawd pane (/mascot on, /mascot off, /mascot help)',
     })
-    if (!(await isOff($))) void $.ui.open({ id: PANE, title: TITLE })
-    if ((await $.store.get(WELCOMED_KEY)) !== true) {
-      showHelp($)
-      await $.store.set(WELCOMED_KEY, true).catch(() => undefined)
-    }
+    if (!(await isOff($))) void open($)
+    const ran = await next(e)
+    await welcome($)
 
-    return next(e)
+    return ran
   })
 
   on('session.attach', async ($, e, next) => {
     const ran = await next(e)
-    if (!(await isOff($))) void $.ui.open({ id: PANE, title: TITLE })
+    if (!(await isOff($))) void open($)
+    await welcome($)
 
     return ran
   })
@@ -87,12 +100,12 @@ export const register: Register = on => {
   on('command.run', { command: 'mascot' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
     if (arg === 'help') {
-      return { text: HELP.join('\n') }
+      return { text: HELP }
     }
     const turnOn = arg === 'on' ? true : arg === 'off' ? false : await isOff($)
     await $.store.set(OFF_KEY, !turnOn)
     if (turnOn) {
-      await $.ui.open({ id: PANE, title: TITLE })
+      await open($)
 
       return { text: 'Clawd is on. /mascot off hides him.' }
     }

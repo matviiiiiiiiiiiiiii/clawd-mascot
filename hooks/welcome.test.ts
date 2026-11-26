@@ -1,15 +1,10 @@
-import { expect, test } from 'claude-code/testing'
+import { expect, mock, test } from 'claude-code/testing'
 
 const start = { cwd: '/', surface: 'desktop', isInteractive: true } as const
 
-test('the first session shows the instructions in the chat, once', async ($, on) => {
-  const lines: string[] = []
+test('the first session puts the instructions in the chat, once, and opens a narrow pane', async ($, on) => {
   const store = new Map<string, unknown>()
-  on('ui.log', (_, e) => {
-    lines.push(e.text)
-
-    return { value: undefined }
-  })
+  const opened: Array<number | undefined> = []
   on('store.get', (_, e) => ({ value: store.get(e.key) }))
   on('store.set', (_, e) => {
     store.set(e.key, e.value)
@@ -17,14 +12,21 @@ test('the first session shows the instructions in the chat, once', async ($, on)
     return { value: undefined }
   })
   on('command.register', () => ({ value: { command: 'mascot' } }))
-  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('ui.open', (_, e) => {
+    opened.push(e.columns)
+
+    return { value: { isPlaced: true } }
+  })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
+  const session = mock.session(on)
 
   await $.session.start(start)
-  expect(lines.some(l => l.includes('/mascot off'))).toBe(true)
-  expect(lines.some(l => l.includes('claude plugin uninstall mascot@clawd-mascot'))).toBe(true)
+  const notes = () => JSON.stringify(session.appended())
+  expect(notes()).toContain('/mascot off')
+  expect(notes()).toContain('claude plugin uninstall mascot@clawd-mascot')
+  expect(opened[0]).toBe(36)
 
-  const shown = lines.length
+  const before = notes().split('Clawd mascot is installed').length
   await $.session.start(start)
-  expect(lines.length).toBe(shown)
+  expect(notes().split('Clawd mascot is installed').length).toBe(before)
 })
