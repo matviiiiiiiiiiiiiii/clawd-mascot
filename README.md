@@ -25,6 +25,8 @@ claude plugin install mascot --marketplace matviiiiiiiiiiiiiii/clawd-mascot
 
 In the Claude desktop app, where `/plugin` does not run: click **+** next to the prompt box, then **Plugins**, **Add marketplace** with `matviiiiiiiiiiiiiii/clawd-mascot`, then **Add plugin**.
 
+The next session he appears, and the chat shows a short note with everything below. `/mascot help` shows it again.
+
 ## Turn him on and off
 
 | Do this | What happens |
@@ -33,10 +35,21 @@ In the Claude desktop app, where `/plugin` does not run: click **+** next to the
 | `/mascot on` | Shows the pane |
 | `/mascot off` | Hides the pane |
 | Close the pane with its **×** | Hides him (same as `/mascot off`) |
+| `/mascot help` | Shows these instructions in the chat |
 
 Your choice is remembered across sessions.
 
 To switch the mod off completely, disable the plugin: in the desktop app under **Plugins**, or from a shell with `claude plugin disable mascot@clawd-mascot` (and `claude plugin enable mascot@clawd-mascot` to bring it back).
+
+## Remove it
+
+From a shell:
+
+```bash
+claude plugin uninstall mascot@clawd-mascot
+```
+
+In the desktop app, remove **mascot** under **Plugins**.
 
 ## Notes
 

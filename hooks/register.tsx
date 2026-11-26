@@ -46,6 +46,19 @@ const go = async ($: Pick<CoreEngineInterface, 'state'>, phase: Phase, at: numbe
 const OFF_KEY = 'off'
 const isOff = async ($: Pick<CoreEngineInterface, 'store'>) => (await $.store.get(OFF_KEY)) === true
 
+// Shown in the chat once, the first session after install, and again on
+// `/mascot help`: everything a new user needs, with nothing to look up.
+const WELCOMED_KEY = 'welcomed'
+const HELP = [
+  'Clawd mascot is installed: he codes in the side pane while Claude works, and sleeps when Claude is done.',
+  'Hide him: /mascot off, or close the pane with its ×. Bring him back: /mascot on. Just /mascot switches.',
+  'Remove the mod: claude plugin uninstall mascot@clawd-mascot in a shell, or remove mascot under Plugins in the desktop app.',
+  'See this again any time: /mascot help',
+]
+const showHelp = ($: Pick<CoreEngineInterface, 'ui'>) => {
+  for (const line of HELP) $.ui.log(line)
+}
+
 export const register: Register = on => {
   // On or off is remembered across sessions: `/mascot` flips it, `/mascot on`
   // and `/mascot off` set it, and closing the pane with its X turns it off.
@@ -53,9 +66,13 @@ export const register: Register = on => {
     await update($, state, now => ({ ...now, phase: 'sleep' as Phase, since: 0, prev: null }))
     await $.command.register({
       name: 'mascot',
-      description: 'Show or hide the Clawd pane (/mascot on, /mascot off)',
+      description: 'Show or hide the Clawd pane (/mascot on, /mascot off, /mascot help)',
     })
     if (!(await isOff($))) void $.ui.open({ id: PANE, title: TITLE })
+    if ((await $.store.get(WELCOMED_KEY)) !== true) {
+      showHelp($)
+      await $.store.set(WELCOMED_KEY, true).catch(() => undefined)
+    }
 
     return next(e)
   })
@@ -69,6 +86,9 @@ export const register: Register = on => {
 
   on('command.run', { command: 'mascot' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
+    if (arg === 'help') {
+      return { text: HELP.join('\n') }
+    }
     const turnOn = arg === 'on' ? true : arg === 'off' ? false : await isOff($)
     await $.store.set(OFF_KEY, !turnOn)
     if (turnOn) {
