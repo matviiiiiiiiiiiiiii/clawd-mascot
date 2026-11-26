@@ -52,10 +52,20 @@ const isOff = async ($: Pick<CoreEngineInterface, 'store'>) => (await $.store.ge
 // shows it once more to those who installed them.)
 const WELCOMED_KEY = 'welcomed-4'
 const HELP = [
-  'Clawd mascot is installed: he codes in the side pane while Claude works, and sleeps when Claude is done.',
-  'Hide him: /mascot off, or close the pane with its ×. Bring him back: /mascot on. Just /mascot switches.',
-  'Remove the mod: claude plugin uninstall mascot@clawd-mascot in a shell, or remove mascot under Plugins in the desktop app.',
-  'See this again any time: /mascot help',
+  'Clawd mascot is installed.',
+  '',
+  'What it is: Clawd is a little pixel mascot in a narrow panel on the right of the chat. While Claude works on your request, he takes out a laptop and types. When Claude is done, he puts the laptop away and falls asleep. He is just for fun: he changes nothing about how Claude works.',
+  '',
+  'Commands (type them in the message box, like a normal message, and press Enter):',
+  '• /mascot off: hides the panel with Clawd, if he is in your way. Nothing is deleted; he just waits until you call him back.',
+  '• /mascot on: shows the panel with Clawd again.',
+  '• /mascot: switches. If Clawd is showing, it hides him; if he is hidden, it shows him.',
+  '• /mascot help: shows these instructions again.',
+  '',
+  'Closing the panel with its × does the same as /mascot off.',
+  'Your choice is remembered: hide him and he stays hidden in new chats too, until you type /mascot on.',
+  '',
+  'To remove the mod completely: ask Claude "remove the Clawd mascot mod", or run in Terminal: claude plugin uninstall mascot@clawd-mascot',
 ].join('\n')
 
 // A notice row in the conversation itself: stored at once, so it is there

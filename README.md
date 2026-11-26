@@ -9,41 +9,44 @@ He is drawn in vector pixel art, whole pixels only, and stands on the bottom edg
 
 ## Install
 
-At the prompt of a Claude Code session in a terminal:
+The easiest way: paste this into Claude (the desktop app's Code tab, or Claude Code in a terminal) and press Enter. Claude installs the mod and explains how to use it.
 
 ```
-/plugin install mascot --marketplace matviiiiiiiiiiiiiii/clawd-mascot
+Install the Clawd mascot mod for Claude Code: run in the shell
+claude plugin install mascot --marketplace matviiiiiiiiiiiiiii/clawd-mascot
+Then show me the instructions from https://github.com/matviiiiiiiiiiiiiii/clawd-mascot#how-to-use word for word, as they are written.
 ```
 
-Answer `y` to add the marketplace, then pick a scope (user scope puts him in every session).
-
-From a shell:
+Or run it yourself in Terminal:
 
 ```bash
 claude plugin install mascot --marketplace matviiiiiiiiiiiiiii/clawd-mascot
 ```
 
-In the Claude desktop app, where `/plugin` does not run: click **+** next to the prompt box, then **Plugins**, **Add marketplace** with `matviiiiiiiiiiiiiii/clawd-mascot`, then **Add plugin**.
+Clawd appears on the right within a few seconds. If he doesn't, fully quit the Claude app (Cmd+Q), open it again and start a new chat.
 
-The next session he appears, and the chat shows a short note with everything below. `/mascot help` shows it again.
+## How to use
 
-## Turn him on and off
+Clawd is a little pixel mascot in a narrow panel on the right of the chat. While Claude works on your request, he takes out a laptop and types. When Claude is done, he puts the laptop away and falls asleep. He is just for fun: he changes nothing about how Claude works.
 
-| Do this | What happens |
+Type these commands in the message box, like a normal message, and press Enter:
+
+| Command | What it does |
 | --- | --- |
-| `/mascot` | Shows him if he is hidden, hides him if he is shown |
-| `/mascot on` | Shows the pane |
-| `/mascot off` | Hides the pane |
-| Close the pane with its **×** | Hides him (same as `/mascot off`) |
-| `/mascot help` | Shows these instructions in the chat |
+| `/mascot off` | Hides the panel with Clawd, if he is in your way. Nothing is deleted; he just waits until you call him back. |
+| `/mascot on` | Shows the panel with Clawd again. |
+| `/mascot` | Switches: if Clawd is showing, it hides him; if he is hidden, it shows him. |
+| `/mascot help` | Shows these instructions in the chat. |
 
-Your choice is remembered across sessions.
+Closing the panel with its **×** does the same as `/mascot off`.
+
+Your choice is remembered: hide him and he stays hidden in new chats too, until you type `/mascot on`.
 
 To switch the mod off completely, disable the plugin: in the desktop app under **Plugins**, or from a shell with `claude plugin disable mascot@clawd-mascot` (and `claude plugin enable mascot@clawd-mascot` to bring it back).
 
 ## Remove it
 
-From a shell:
+Ask Claude: "remove the Clawd mascot mod". Or run in Terminal:
 
 ```bash
 claude plugin uninstall mascot@clawd-mascot
