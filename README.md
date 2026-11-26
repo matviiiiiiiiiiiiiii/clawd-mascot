@@ -33,14 +33,12 @@ Type these commands in the message box, like a normal message, and press Enter:
 
 | Command | What it does |
 | --- | --- |
-| `/mascot off` | Hides the panel with Clawd, if he is in your way. Nothing is deleted; he just waits until you call him back. |
+| `/mascot off` | Hides Clawd everywhere, in this chat and in new ones, until you type `/mascot on`. Nothing is deleted; he just waits until you call him back. |
 | `/mascot on` | Shows the panel with Clawd again. |
 | `/mascot` | Switches: if Clawd is showing, it hides him; if he is hidden, it shows him. |
 | `/mascot help` | Shows these instructions in the chat. |
 
-Closing the panel with its **×** does the same as `/mascot off`.
-
-Your choice is remembered: hide him and he stays hidden in new chats too, until you type `/mascot on`.
+The **×** on the panel hides Clawd only in this chat. In your next chat he is back.
 
 To switch the mod off completely, disable the plugin: in the desktop app under **Plugins**, or from a shell with `claude plugin disable mascot@clawd-mascot` (and `claude plugin enable mascot@clawd-mascot` to bring it back).
 

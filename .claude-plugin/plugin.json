@@ -1,6 +1,6 @@
 {
   "name": "mascot",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "description": "A pane where a pixel Clawd takes out a laptop and codes while Claude works, then puts it away and sleeps",
   "types": "./types/index.d.ts",
   "author": {

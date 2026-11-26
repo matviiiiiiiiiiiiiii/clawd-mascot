@@ -57,13 +57,12 @@ const HELP = [
   'What it is: Clawd is a little pixel mascot in a narrow panel on the right of the chat. While Claude works on your request, he takes out a laptop and types. When Claude is done, he puts the laptop away and falls asleep. He is just for fun: he changes nothing about how Claude works.',
   '',
   'Commands (type them in the message box, like a normal message, and press Enter):',
-  '• /mascot off: hides the panel with Clawd, if he is in your way. Nothing is deleted; he just waits until you call him back.',
+  '• /mascot off: hides Clawd everywhere, in this chat and in new ones, until you type /mascot on. Nothing is deleted; he just waits until you call him back.',
   '• /mascot on: shows the panel with Clawd again.',
   '• /mascot: switches. If Clawd is showing, it hides him; if he is hidden, it shows him.',
   '• /mascot help: shows these instructions again.',
   '',
-  'Closing the panel with its × does the same as /mascot off.',
-  'Your choice is remembered: hide him and he stays hidden in new chats too, until you type /mascot on.',
+  'The × on the panel hides Clawd only in this chat. In your next chat he is back.',
   '',
   'To remove the mod completely: ask Claude "remove the Clawd mascot mod", or run in Terminal: claude plugin uninstall mascot@clawd-mascot',
 ].join('\n')
@@ -103,16 +102,21 @@ const welcomeWhereSeen = async (
   else pending = true
 }
 
+// Closed with the pane's × in this session: he stays away for the rest of it
+// and comes back in the next one. Each session runs its own copy of the mod.
+let closedHere = false
+const shouldShow = async ($: Pick<CoreEngineInterface, 'store'>) => !closedHere && !(await isOff($))
+
 export const register: Register = on => {
-  // On or off is remembered across sessions: `/mascot` flips it, `/mascot on`
-  // and `/mascot off` set it, and closing the pane with its X turns it off.
+  // `/mascot off` hides him everywhere until `/mascot on` (remembered across
+  // sessions); the pane's × hides him only in this session.
   on('session.start', async ($, e, next) => {
     await update($, state, now => ({ ...now, phase: 'sleep' as Phase, since: 0, prev: null }))
     await $.command.register({
       name: 'mascot',
       description: 'Show or hide the Clawd pane (/mascot on, /mascot off, /mascot help)',
     })
-    const opening = (await isOff($)) ? undefined : open($).catch(() => undefined)
+    const opening = (await shouldShow($)) ? open($).catch(() => undefined) : undefined
     const ran = await next(e)
     await welcomeWhereSeen($, await opening)
 
@@ -121,7 +125,7 @@ export const register: Register = on => {
 
   on('session.attach', async ($, e, next) => {
     const ran = await next(e)
-    if (!(await isOff($))) await welcomeWhereSeen($, await open($).catch(() => undefined))
+    if (await shouldShow($)) await welcomeWhereSeen($, await open($).catch(() => undefined))
 
     return ran
   })
@@ -131,23 +135,23 @@ export const register: Register = on => {
     if (arg === 'help') {
       return { text: HELP }
     }
-    const turnOn = arg === 'on' ? true : arg === 'off' ? false : await isOff($)
+    const turnOn = arg === 'on' ? true : arg === 'off' ? false : !(await shouldShow($))
     await $.store.set(OFF_KEY, !turnOn)
     if (turnOn) {
+      closedHere = false
       await open($)
 
       return { text: 'Clawd is on. /mascot off hides him.' }
     }
     await $.ui.close({ id: PANE })
 
-    return { text: 'Clawd is off. /mascot on brings him back.' }
+    return { text: 'Clawd is off, in new chats too. /mascot on brings him back.' }
   })
 
   on('ui.close', async ($, e, next) => {
-    // Never let remembering the choice get in the way of the close itself.
-    if (e.id === PANE && e.origin.kind === 'person') {
-      await $.store.set(OFF_KEY, true).catch(() => undefined)
-    }
+    if (e.id === PANE && e.origin.kind === 'person') closedHere = true
+    // What the last close was, kept so a close that never arrives shows up.
+    void $.store.set('last-close', `${e.id}:${e.origin.kind}`).catch(() => undefined)
 
     return next(e)
   })
