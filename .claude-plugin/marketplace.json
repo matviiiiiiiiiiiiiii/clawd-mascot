@@ -1,0 +1,14 @@
+{
+  "name": "clawd-mascot",
+  "owner": {
+    "name": "Matvii"
+  },
+  "description": "Clawd, a pixel mascot that codes in a side pane while Claude works",
+  "plugins": [
+    {
+      "name": "mascot",
+      "source": "./",
+      "description": "A pane where a pixel Clawd takes out a laptop and codes while Claude works, then puts it away and sleeps"
+    }
+  ]
+}

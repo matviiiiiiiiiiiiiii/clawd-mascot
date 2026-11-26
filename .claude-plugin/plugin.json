@@ -1,0 +1,10 @@
+{
+  "name": "mascot",
+  "version": "1.0.0",
+  "description": "A pane where a pixel Clawd takes out a laptop and codes while Claude works, then puts it away and sleeps",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Matvii"
+  },
+  "license": "MIT"
+}
