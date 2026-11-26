@@ -48,9 +48,9 @@ const isOff = async ($: Pick<CoreEngineInterface, 'store'>) => (await $.store.ge
 
 // Shown in the chat once, the first session after install, and again on
 // `/mascot help`: everything a new user needs, with nothing to look up.
-// (1.1.0 and 1.2.0 marked it shown without it reaching a seen chat: a new key
+// (1.1.0 to 1.2.1 marked it shown without it reaching a seen chat: a new key
 // shows it once more to those who installed them.)
-const WELCOMED_KEY = 'welcomed-3'
+const WELCOMED_KEY = 'welcomed-4'
 const HELP = [
   'Clawd mascot is installed: he codes in the side pane while Claude works, and sleeps when Claude is done.',
   'Hide him: /mascot off, or close the pane with its ×. Bring him back: /mascot on. Just /mascot switches.',
@@ -73,14 +73,24 @@ const welcome = async ($: Pick<CoreEngineInterface, 'session' | 'store'>) => {
 const COLUMNS = 36
 const open = ($: Pick<CoreEngineInterface, 'ui'>) => $.ui.open({ id: PANE, title: TITLE, columns: COLUMNS })
 
-// Only in a session a person is looking at: the one where the pane was just
-// placed on a screen. The app's unseen background sessions start the mod too,
-// and 1.2.0 spent the note in one of them.
+// Only in a session a person is looking at (the pane was placed on a screen)
+// and only once its conversation has begun: the desktop app starts a session
+// before its first message, and a row added then is never saved. Installed
+// from a chat, the mod loads into that chat, which has begun: the note comes
+// at once. In a fresh session it waits for the first message.
+let pending = false
+const hasBegun = async ($: Pick<CoreEngineInterface, 'session'>) => {
+  const rows = await $.session.messages().catch(() => undefined)
+
+  return Array.isArray(rows) && rows.length > 0
+}
 const welcomeWhereSeen = async (
   $: Pick<CoreEngineInterface, 'session' | 'store'>,
   opened: { isPlaced: boolean } | undefined,
 ) => {
-  if (opened?.isPlaced === true) await welcome($)
+  if (opened?.isPlaced !== true) return
+  if (await hasBegun($)) await welcome($)
+  else pending = true
 }
 
 export const register: Register = on => {
@@ -133,6 +143,10 @@ export const register: Register = on => {
   })
 
   on('turn.start', async ($, e, next) => {
+    if (e.agentId === undefined && pending) {
+      pending = false
+      await welcome($)
+    }
     if (e.agentId === undefined) {
       settle?.cancel()
       settle = undefined
