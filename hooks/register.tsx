@@ -102,6 +102,32 @@ const welcomeWhereSeen = async (
   else pending = true
 }
 
+// Clawd keeps typing while Claude or any subagent of this session is still
+// at work; background shell commands do not count. He puts the laptop away
+// only once all of them are done, checking again while agents still run.
+let mainBusy = false
+const agentsRunning = async ($: Pick<CoreEngineInterface, 'agent'>) => {
+  const agents = await $.agent.list().catch(() => [])
+
+  return agents.some(a => a.status === 'running')
+}
+const settleSoon = ($: Pick<CoreEngineInterface, 'clock' | 'state' | 'agent'>) => {
+  settle?.cancel()
+  settle = $.clock.after(SETTLE_MS, () => {
+    settle = undefined
+    void (async () => {
+      if (mainBusy) return
+      if (await agentsRunning($)) {
+        settleSoon($)
+
+        return
+      }
+      const now = await read($, state)
+      if (now.phase === 'work') await go($, 'rest', await $.clock.now())
+    })()
+  })
+}
+
 // Closed with the pane's × in this session: he stays away for the rest of it
 // and comes back in the next one. Each session runs its own copy of the mod.
 let closedHere = false
@@ -161,27 +187,19 @@ export const register: Register = on => {
       pending = false
       await welcome($)
     }
-    if (e.agentId === undefined) {
-      settle?.cancel()
-      settle = undefined
-      const now = await read($, state)
-      if (now.phase !== 'work') await go($, 'work', await $.clock.now())
-    }
+    // Claude's own turn or a subagent's: either way Clawd is at work.
+    if (e.agentId === undefined) mainBusy = true
+    settle?.cancel()
+    settle = undefined
+    const now = await read($, state)
+    if (now.phase !== 'work') await go($, 'work', await $.clock.now())
 
     return next(e)
   })
 
   on('turn.complete', async ($, e, next) => {
-    if (e.agentId === undefined) {
-      settle?.cancel()
-      settle = $.clock.after(SETTLE_MS, () => {
-        settle = undefined
-        void (async () => {
-          const now = await read($, state)
-          if (now.phase === 'work') await go($, 'rest', await $.clock.now())
-        })()
-      })
-    }
+    if (e.agentId === undefined) mainBusy = false
+    settleSoon($)
 
     return next(e)
   })
